@@ -1,10 +1,14 @@
 {
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": "dist/client",
+  "functions": {
+    "api/[...path].ts": {
+      "runtime": "edge"
+    }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/((?!assets/|images/|backgrounds/|favicon.ico|robots.txt|sitemap.xml).*)",
+      "destination": "/api/$1"
     }
   ]
 }
