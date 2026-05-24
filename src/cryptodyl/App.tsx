@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   BrowserRouter as Router,
   Link,
@@ -10,14 +10,14 @@ import {
   useNavigate,
   useParams,
   useSearchParams,
-} from 'react-router-dom';
+} from "react-router-dom";
 import {
   categoryCasinosImage,
   categoryEventsImage,
   categoryPassiveIncomeImage,
   cryptodylHeroImage,
   cryptodylLogoImage,
-} from '@/lib/assets';
+} from "@/lib/assets";
 
 /* ------------------------------------------------------------------ */
 /* Types */
@@ -44,46 +44,47 @@ interface User {
   joined: string;
 }
 
-type PostDraft = Omit<Post, 'id'>;
+type PostDraft = Omit<Post, "id">;
 
 /* ------------------------------------------------------------------ */
 /* Constants */
 /* ------------------------------------------------------------------ */
 const HERO_IMAGE = cryptodylHeroImage;
-const POST_STORAGE_KEY = 'cryptodyl_posts';
-const ADMIN_STORAGE_KEY = 'cryptodyl_admin';
-const USERS_STORAGE_KEY = 'cryptodyl_users';
-const LOGGED_IN_USER_KEY = 'cryptodyl_logged_in_user';
+const POST_STORAGE_KEY = "cryptodyl_posts";
+const ADMIN_STORAGE_KEY = "cryptodyl_admin";
+const USERS_STORAGE_KEY = "cryptodyl_users";
+const LOGGED_IN_USER_KEY = "cryptodyl_logged_in_user";
 
-const DEFAULT_AVATAR = 'https://cryptodyl.com/images/1775422489.png';
+const DEFAULT_AVATAR = "https://cryptodyl.com/images/1775422489.png";
 
 const CATEGORIES = [
   {
-    slug: 'casinos',
-    name: 'Casinos',
+    slug: "casinos",
+    name: "Casinos",
     image: categoryCasinosImage,
-    description: 'Best crypto casino reviews, bonuses, and betting guides.',
+    description: "Best crypto casino reviews, bonuses, and betting guides.",
   },
   {
-    slug: 'events',
-    name: 'Events',
+    slug: "events",
+    name: "Events",
     image: categoryEventsImage,
-    description: 'Crypto events, giveaways, and community celebrations.',
+    description: "Crypto events, giveaways, and community celebrations.",
   },
   {
-    slug: 'passive-crypto-earning',
-    name: 'Passive Crypto Earning',
+    slug: "passive-crypto-earning",
+    name: "Passive Crypto Earning",
     image: categoryPassiveIncomeImage,
-    description: 'Guides to earning passive income with crypto platforms.',
+    description: "Guides to earning passive income with crypto platforms.",
   },
 ];
 
 const initialPosts: Post[] = [
   {
     id: 1,
-    title: 'Thunderpick Casino Review 2025 – Best Crypto Casino Bonus Up to $2000',
+    title:
+      "Thunderpick Casino Review 2025 – Best Crypto Casino Bonus Up to $2000",
     excerpt:
-      'Discover Thunderpick, one of the best crypto casinos in 2025. Claim a 100% bonus up to $2000 with fast payouts.',
+      "Discover Thunderpick, one of the best crypto casinos in 2025. Claim a 100% bonus up to $2000 with fast payouts.",
     content: `The crypto casino space is more competitive than ever in 2025, but one platform is dominating the scene right now: Thunderpick.
 
 From massive casino bonuses and esports betting to lightning-fast crypto payouts, Thunderpick has quickly become one of the most talked-about crypto gambling platforms online.
@@ -121,68 +122,70 @@ Thunderpick supports many of the most popular cryptocurrencies including: BTC, E
 ## Final Verdict
 
 If you're searching for the best crypto casino in 2025, Thunderpick is absolutely worth checking out. The current 100% bonus up to $2000 gives new users a huge advantage.`,
-    image: 'https://cryptodyl.com/uploads/1778517620.jpg',
-    author: 'Dylan',
+    image: "https://cryptodyl.com/uploads/1778517620.jpg",
+    author: "Dylan",
     authorAvatar: DEFAULT_AVATAR,
-    date: '2 days ago',
+    date: "2 days ago",
     views: 76,
     comments: 2,
-    category: 'casinos',
+    category: "casinos",
   },
   {
     id: 2,
-    title: 'CryptoDyl Is Back — Celebrate With a 2x $2.5 BNB Giveaway!',
+    title: "CryptoDyl Is Back — Celebrate With a 2x $2.5 BNB Giveaway!",
     excerpt:
-      'CryptoDyl is officially back after a short break. Celebrate with a 2x $2.5 BNB giveaway event.',
+      "CryptoDyl is officially back after a short break. Celebrate with a 2x $2.5 BNB giveaway event.",
     content:
       "We are thrilled to announce CryptoDyl's return. To celebrate, we are running a giveaway where 2 lucky winners will each receive $2.5 worth of BNB. Stay tuned for more crypto content and passive income guides.",
-    image: 'https://cryptodyl.com/uploads/1778179992.jpg',
-    author: 'Dylan',
+    image: "https://cryptodyl.com/uploads/1778179992.jpg",
+    author: "Dylan",
     authorAvatar: DEFAULT_AVATAR,
-    date: '5 days ago',
+    date: "5 days ago",
     views: 32,
     comments: 0,
-    category: 'events',
+    category: "events",
   },
   {
     id: 3,
-    title: 'The Ultimate Grass.io Passive Income Guide (2026) – Earn Crypto by Sharing Bandwidth',
+    title:
+      "The Ultimate Grass.io Passive Income Guide (2026) – Earn Crypto by Sharing Bandwidth",
     excerpt:
-      'Learn how to earn passive income with Grass.io crypto in 2026. Complete beginner guide to maximizing earnings.',
+      "Learn how to earn passive income with Grass.io crypto in 2026. Complete beginner guide to maximizing earnings.",
     content:
-      'Grass.io is one of the leading platforms for earning passive crypto income by sharing unused internet bandwidth. In this 2026 guide, learn step-by-step setup, optimal node configuration, security tips, and how to withdraw your earnings efficiently. Start earning today with minimal effort.',
-    image: 'https://cryptodyl.com/uploads/1775555063.png',
-    author: 'Dylan',
+      "Grass.io is one of the leading platforms for earning passive crypto income by sharing unused internet bandwidth. In this 2026 guide, learn step-by-step setup, optimal node configuration, security tips, and how to withdraw your earnings efficiently. Start earning today with minimal effort.",
+    image: "https://cryptodyl.com/uploads/1775555063.png",
+    author: "Dylan",
     authorAvatar: DEFAULT_AVATAR,
-    date: '1 month ago',
+    date: "1 month ago",
     views: 118,
     comments: 2,
-    category: 'passive-crypto-earning',
+    category: "passive-crypto-earning",
   },
   {
     id: 4,
-    title: 'Ultimate Guide to Honeygain: How to Start Earning Passive Income (2026)',
+    title:
+      "Ultimate Guide to Honeygain: How to Start Earning Passive Income (2026)",
     excerpt:
-      'Start earning passive income with Honeygain. Learn how it works, maximize earnings, and get the best tips.',
+      "Start earning passive income with Honeygain. Learn how it works, maximize earnings, and get the best tips.",
     content:
-      'Honeygain allows you to monetize your internet connection by sharing bandwidth with businesses. This comprehensive 2026 guide covers installation on all devices, referral strategies, payout methods, and how to earn up to $50 monthly passively. Perfect for beginners looking to generate crypto income.',
-    image: 'https://cryptodyl.com/uploads/1775426310.png',
-    author: 'Dylan',
+      "Honeygain allows you to monetize your internet connection by sharing bandwidth with businesses. This comprehensive 2026 guide covers installation on all devices, referral strategies, payout methods, and how to earn up to $50 monthly passively. Perfect for beginners looking to generate crypto income.",
+    image: "https://cryptodyl.com/uploads/1775426310.png",
+    author: "Dylan",
     authorAvatar: DEFAULT_AVATAR,
-    date: '1 month ago',
+    date: "1 month ago",
     views: 184,
     comments: 3,
-    category: 'passive-crypto-earning',
+    category: "passive-crypto-earning",
   },
 ];
 
 const initialUsers: User[] = [
   {
-    username: 'Dylan',
-    displayName: 'Dylan',
+    username: "Dylan",
+    displayName: "Dylan",
     avatar: DEFAULT_AVATAR,
-    bio: 'Crypto enthusiast, passive income explorer, and content creator sharing the best crypto guides since 2024.',
-    joined: 'January 2024',
+    bio: "Crypto enthusiast, passive income explorer, and content creator sharing the best crypto guides since 2024.",
+    joined: "January 2024",
   },
 ];
 
@@ -190,7 +193,7 @@ const initialUsers: User[] = [
 /* Helpers */
 /* ------------------------------------------------------------------ */
 function readStorage<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
+  if (typeof window === "undefined") return fallback;
   try {
     const val = localStorage.getItem(key);
     return val ? (JSON.parse(val) as T) : fallback;
@@ -208,12 +211,12 @@ function readUsers(): User[] {
 }
 
 function readAdmin(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(ADMIN_STORAGE_KEY) === 'true';
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(ADMIN_STORAGE_KEY) === "true";
 }
 
 function readLoggedInUser(): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   return localStorage.getItem(LOGGED_IN_USER_KEY);
 }
 
@@ -232,16 +235,16 @@ function createDraft(post?: Post): PostDraft {
         category: post.category,
       }
     : {
-        title: '',
-        excerpt: '',
-        content: '',
+        title: "",
+        excerpt: "",
+        content: "",
         image: HERO_IMAGE,
-        author: 'Dylan',
+        author: "Dylan",
         authorAvatar: DEFAULT_AVATAR,
-        date: 'Just now',
+        date: "Just now",
         views: 0,
         comments: 0,
-        category: 'casinos',
+        category: "casinos",
       };
 }
 
@@ -261,7 +264,7 @@ const pageMotion = {
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [pathname]);
   return null;
 }
@@ -284,21 +287,25 @@ function Navbar({
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <motion.header
       initial={{ y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.45, ease: 'easeOut' }}
-      className={`site-navbar ${scrolled ? 'nav-scrolled' : ''}`}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+      className={`site-navbar ${scrolled ? "nav-scrolled" : ""}`}
     >
       <div className="site-navbar__inner">
         <Link to="/" className="brand">
           <div className="brand__mark">
-            <img src={cryptodylLogoImage} alt="CryptoDyl" className="h-7 w-7 object-contain" />
+            <img
+              src={cryptodylLogoImage}
+              alt="CryptoDyl"
+              className="h-7 w-7 object-contain"
+            />
           </div>
           <span className="brand__text">CryptoDyl</span>
         </Link>
@@ -312,8 +319,19 @@ function Navbar({
         </nav>
 
         <div className="nav-actions">
-          <button onClick={onSearchOpen} className="search-btn" aria-label="Search">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <button
+            onClick={onSearchOpen}
+            className="search-btn"
+            aria-label="Search"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20L17 17" />
             </svg>
@@ -326,7 +344,7 @@ function Navbar({
           )}
 
           {loggedUser ? (
-            <div className="hidden items-center gap-3 md:flex">
+            <div className="nav-user-actions">
               <Link to={`/profile/${loggedUser}`} className="nav-user">
                 {loggedUser}
               </Link>
@@ -342,11 +360,22 @@ function Navbar({
 
           <button
             onClick={() => setMobileOpen((o) => !o)}
-            className="mobile-menu-btn md:hidden"
+            className="mobile-menu-btn"
             aria-label="Toggle menu"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {mobileOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              {mobileOpen ? (
+                <path d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
             </svg>
           </button>
         </div>
@@ -356,7 +385,7 @@ function Navbar({
         {mobileOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="nav-mobile"
           >
@@ -370,10 +399,16 @@ function Navbar({
               <MobileNavLink to="/popular" onClick={() => setMobileOpen(false)}>
                 Trending
               </MobileNavLink>
-              <MobileNavLink to="/categories" onClick={() => setMobileOpen(false)}>
+              <MobileNavLink
+                to="/categories"
+                onClick={() => setMobileOpen(false)}
+              >
                 Categories
               </MobileNavLink>
-              <MobileNavLink to="/archives" onClick={() => setMobileOpen(false)}>
+              <MobileNavLink
+                to="/archives"
+                onClick={() => setMobileOpen(false)}
+              >
                 Archives
               </MobileNavLink>
               <button
@@ -386,7 +421,10 @@ function Navbar({
                 Search
               </button>
               {loggedUser && (
-                <MobileNavLink to={`/profile/${loggedUser}`} onClick={() => setMobileOpen(false)}>
+                <MobileNavLink
+                  to={`/profile/${loggedUser}`}
+                  onClick={() => setMobileOpen(false)}
+                >
                   {loggedUser}
                 </MobileNavLink>
               )}
@@ -406,7 +444,11 @@ function Navbar({
                   Logout
                 </button>
               ) : (
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="nav-mobile__login">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="nav-mobile__login"
+                >
                   Login
                 </Link>
               )}
@@ -423,7 +465,7 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   const active = pathname === to;
 
   return (
-    <Link to={to} className={`nav-link ${active ? 'is-active' : ''}`}>
+    <Link to={to} className={`nav-link ${active ? "is-active" : ""}`}>
       {children}
     </Link>
   );
@@ -442,7 +484,11 @@ function MobileNavLink({
   const active = pathname === to;
 
   return (
-    <Link to={to} onClick={onClick} className={`mobile-nav-link ${active ? 'is-active' : ''}`}>
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`mobile-nav-link ${active ? "is-active" : ""}`}
+    >
       {children}
     </Link>
   );
@@ -458,7 +504,7 @@ function SearchModal({
   onClose: () => void;
   posts: Post[];
 }) {
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState("");
   const navigate = useNavigate();
 
   const results = q.trim()
@@ -470,7 +516,7 @@ function SearchModal({
     : [];
 
   function handleSelect(id: number) {
-    setQ('');
+    setQ("");
     onClose();
     navigate(`/posts/${id}`);
   }
@@ -502,7 +548,11 @@ function SearchModal({
             />
             <div className="search-modal__results">
               {results.map((p) => (
-                <button key={p.id} onClick={() => handleSelect(p.id)} className="search-result">
+                <button
+                  key={p.id}
+                  onClick={() => handleSelect(p.id)}
+                  className="search-result"
+                >
                   <div className="search-result__title">{p.title}</div>
                   <div className="search-result__meta">
                     {p.date} · {p.views} views
@@ -510,7 +560,9 @@ function SearchModal({
                 </button>
               ))}
               {q.trim() && results.length === 0 && (
-                <p className="py-6 text-center text-sm text-zinc-500">No results found.</p>
+                <p className="py-6 text-center text-sm text-zinc-500">
+                  No results found.
+                </p>
               )}
             </div>
           </motion.div>
@@ -523,25 +575,28 @@ function SearchModal({
 /* -- PostCard -------------------------------------------------------- */
 function PostCard({
   post,
-  variant = 'default',
+  variant = "default",
 }: {
   post: Post;
-  variant?: 'default' | 'featured' | 'compact';
+  variant?: "default" | "featured" | "compact";
 }) {
-  const compact = variant === 'compact';
+  const compact = variant === "compact";
 
   const categoryLabel =
-    post.category === 'passive-crypto-earning'
-      ? 'Passive Earning'
+    post.category === "passive-crypto-earning"
+      ? "Passive Earning"
       : post.category.charAt(0).toUpperCase() + post.category.slice(1);
 
   return (
     <motion.article
       whileHover={{ y: -4 }}
-      transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+      transition={{ type: "spring", stiffness: 220, damping: 24 }}
       className="h-full"
     >
-      <Link to={`/posts/${post.id}`} className={`post-card ${compact ? 'compact' : ''}`}>
+      <Link
+        to={`/posts/${post.id}`}
+        className={`post-card ${compact ? "compact" : ""}`}
+      >
         <div className="post-card__media">
           <img src={post.image} alt={post.title} />
           <span className="post-card__badge">{categoryLabel}</span>
@@ -553,7 +608,11 @@ function PostCard({
 
           <div className="post-card__meta">
             <div className="post-card__author">
-              <img src={post.authorAvatar} alt={post.author} className="post-card__avatar" />
+              <img
+                src={post.authorAvatar}
+                alt={post.author}
+                className="post-card__avatar"
+              />
               <span>{post.author}</span>
             </div>
             <span>{post.date}</span>
@@ -576,7 +635,7 @@ function HeroSection() {
           <motion.h1
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, ease: 'easeOut' }}
+            transition={{ duration: 0.75, ease: "easeOut" }}
             className="hero__title"
           >
             Decode
@@ -592,8 +651,8 @@ function HeroSection() {
             transition={{ delay: 0.25, duration: 0.7 }}
             className="hero__desc"
           >
-            Research-driven crypto intelligence, passive income systems,
-            casino ecosystems, and Web3 strategies curated with brutal clarity.
+            Research-driven crypto intelligence, passive income systems, casino
+            ecosystems, and Web3 strategies curated with brutal clarity.
           </motion.p>
 
           <motion.div
@@ -630,7 +689,9 @@ function HeroSection() {
           <div className="market-card market-card--large">
             <div className="market-card__label">Bitcoin</div>
             <div className="market-card__value">$112,480</div>
-            <div className="market-card__change">+12.45% <span>(24H)</span></div>
+            <div className="market-card__change">
+              +12.45% <span>(24H)</span>
+            </div>
             <div className="market-card__chart green" />
           </div>
 
@@ -638,14 +699,18 @@ function HeroSection() {
             <div className="market-card">
               <div className="market-card__label">Ethereum</div>
               <div className="market-card__value small">$4,128</div>
-              <div className="market-card__change">+1.85% <span>(24H)</span></div>
+              <div className="market-card__change">
+                +1.85% <span>(24H)</span>
+              </div>
               <div className="market-card__chart purple" />
             </div>
 
             <div className="market-card">
               <div className="market-card__label">Solana</div>
               <div className="market-card__value small">$248</div>
-              <div className="market-card__change">+1.65% <span>(24H)</span></div>
+              <div className="market-card__change">
+                +1.65% <span>(24H)</span>
+              </div>
               <div className="market-card__chart teal" />
             </div>
           </div>
@@ -655,7 +720,8 @@ function HeroSection() {
               <div className="narrative-card__label">Trending Narrative</div>
               <h3>AI x DeFi</h3>
               <p>
-                AI agents, decentralized finance and the next trillion-dollar shift.
+                AI agents, decentralized finance and the next trillion-dollar
+                shift.
               </p>
               <div className="narrative-tags">
                 <span>AI</span>
@@ -695,7 +761,7 @@ function Home({ posts }: { posts: Post[] }) {
               key={p.id}
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
+              viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.55, delay: i * 0.08 }}
             >
               <PostCard post={p} />
@@ -720,14 +786,18 @@ function Home({ posts }: { posts: Post[] }) {
               key={cat.slug}
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
+              viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.55, delay: i * 0.08 }}
             >
               <Link to={`/category/${cat.slug}`} className="category-card">
                 <img src={cat.image} alt={cat.name} />
                 <div className="category-card__overlay" />
                 <div className="category-card__icon">
-                  {cat.slug === 'casinos' ? '⬢' : cat.slug === 'events' ? '✦' : '$'}
+                  {cat.slug === "casinos"
+                    ? "⬢"
+                    : cat.slug === "events"
+                      ? "✦"
+                      : "$"}
                 </div>
                 <div className="category-card__content">
                   <h3>{cat.name}</h3>
@@ -761,7 +831,7 @@ function Home({ posts }: { posts: Post[] }) {
 
 /* -- Posts Page ----------------------------------------------------- */
 function PostsPage({ posts }: { posts: Post[] }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const filtered = posts.filter((p) => {
     const q = search.trim().toLowerCase();
@@ -798,7 +868,9 @@ function PostsPage({ posts }: { posts: Post[] }) {
         ))}
       </div>
 
-      {filtered.length === 0 && <div className="empty-state">No posts match your search.</div>}
+      {filtered.length === 0 && (
+        <div className="empty-state">No posts match your search.</div>
+      )}
     </motion.main>
   );
 }
@@ -810,7 +882,7 @@ function PostDetail({ posts }: { posts: Post[] }) {
 
   if (!post) return <Navigate to="/posts" replace />;
 
-  const contentParagraphs = post.content.split('\n\n').filter(Boolean);
+  const contentParagraphs = post.content.split("\n\n").filter(Boolean);
 
   return (
     <motion.main {...pageMotion} className="article-shell">
@@ -834,19 +906,19 @@ function PostDetail({ posts }: { posts: Post[] }) {
 
         <div className="article-body">
           {contentParagraphs.map((para, i) => {
-            if (para.startsWith('## ')) {
+            if (para.startsWith("## ")) {
               return (
                 <h2 key={i} className="article-h2">
-                  {para.replace('## ', '')}
+                  {para.replace("## ", "")}
                 </h2>
               );
             }
 
-            if (para.startsWith('- ')) {
+            if (para.startsWith("- ")) {
               return (
                 <ul key={i} className="article-list">
-                  {para.split('\n').map((line, j) => (
-                    <li key={j}>{line.replace(/^- /, '')}</li>
+                  {para.split("\n").map((line, j) => (
+                    <li key={j}>{line.replace(/^- /, "")}</li>
                   ))}
                 </ul>
               );
@@ -870,24 +942,20 @@ function PostDetail({ posts }: { posts: Post[] }) {
 }
 
 /* -- Login Page ------------------------------------------------------ */
-function LoginPage({
-  onLogin,
-}: {
-  onLogin: (username: string) => void;
-}) {
+function LoginPage({ onLogin }: { onLogin: (username: string) => void }) {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (username.trim() && password === 'admin') {
+    if (username.trim() && password === "admin") {
       onLogin(username.trim());
-      navigate('/admin');
+      navigate("/admin");
       return;
     }
-    setError('Invalid credentials. Use any username with password: admin');
+    setError("Invalid credentials. Use any username with password: admin");
   }
 
   return (
@@ -932,9 +1000,9 @@ function LoginPage({
 
 /* -- Register Page --------------------------------------------------- */
 function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [done, setDone] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
@@ -950,7 +1018,9 @@ function RegisterPage() {
           <div className="text-center py-8">
             <div className="mb-5 text-5xl text-lime-400">✓</div>
             <h2 className="auth-title">Account created</h2>
-            <p className="page-subtitle mt-3">You can now log in with your credentials.</p>
+            <p className="page-subtitle mt-3">
+              You can now log in with your credentials.
+            </p>
             <Link to="/login" className="auth-submit inline-flex mt-6">
               Sign in
             </Link>
@@ -966,7 +1036,11 @@ function RegisterPage() {
             <form onSubmit={handleSubmit} className="auth-form">
               <div>
                 <label>Display name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                />
               </div>
               <div>
                 <label>Email</label>
@@ -999,7 +1073,7 @@ function RegisterPage() {
 
 /* -- Forgot Password Page ------------------------------------------- */
 function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
 
   return (
@@ -1009,7 +1083,8 @@ function ForgotPasswordPage() {
           <div className="text-center py-8">
             <h2 className="auth-title">Check your email</h2>
             <p className="page-subtitle mt-3">
-              We sent a reset link to <strong className="text-white">{email}</strong>
+              We sent a reset link to{" "}
+              <strong className="text-white">{email}</strong>
             </p>
             <Link to="/login" className="auth-submit inline-flex mt-6">
               Back to login
@@ -1061,7 +1136,11 @@ function ProfilePage({ posts, users }: { posts: Post[]; users: User[] }) {
   return (
     <motion.main {...pageMotion} className="page-shell">
       <div className="profile-head">
-        <img src={user.avatar} alt={user.displayName} className="profile-avatar" />
+        <img
+          src={user.avatar}
+          alt={user.displayName}
+          className="profile-avatar"
+        />
         <div>
           <h1 className="page-title">{user.displayName}</h1>
           <p className="page-subtitle mt-3 max-w-2xl">{user.bio}</p>
@@ -1080,7 +1159,9 @@ function ProfilePage({ posts, users }: { posts: Post[]; users: User[] }) {
             <PostCard key={p.id} post={p} />
           ))}
         </div>
-        {userPosts.length === 0 && <p className="empty-state">No posts published yet.</p>}
+        {userPosts.length === 0 && (
+          <p className="empty-state">No posts published yet.</p>
+        )}
       </div>
     </motion.main>
   );
@@ -1115,11 +1196,15 @@ function CategoriesPage() {
 
       <div className="categories-grid mt-10">
         {CATEGORIES.map((cat) => (
-          <Link key={cat.slug} to={`/category/${cat.slug}`} className="category-card">
+          <Link
+            key={cat.slug}
+            to={`/category/${cat.slug}`}
+            className="category-card"
+          >
             <img src={cat.image} alt={cat.name} />
             <div className="category-card__overlay" />
             <div className="category-card__icon">
-              {cat.slug === 'casinos' ? '⬢' : cat.slug === 'events' ? '✦' : '$'}
+              {cat.slug === "casinos" ? "⬢" : cat.slug === "events" ? "✦" : "$"}
             </div>
             <div className="category-card__content">
               <h3>{cat.name}</h3>
@@ -1161,7 +1246,9 @@ function CategoryPostsPage({ posts }: { posts: Post[] }) {
         ))}
       </div>
 
-      {filtered.length === 0 && <div className="empty-state">No posts in this category yet.</div>}
+      {filtered.length === 0 && (
+        <div className="empty-state">No posts in this category yet.</div>
+      )}
     </motion.main>
   );
 }
@@ -1169,9 +1256,9 @@ function CategoryPostsPage({ posts }: { posts: Post[] }) {
 /* -- Archives Page -------------------------------------------------- */
 function ArchivesPage({ posts }: { posts: Post[] }) {
   const months = [
-    { label: 'May 2026', year: 2026, month: 'May' },
-    { label: 'April 2026', year: 2026, month: 'April' },
-    { label: 'March 2026', year: 2026, month: 'March' },
+    { label: "May 2026", year: 2026, month: "May" },
+    { label: "April 2026", year: 2026, month: "April" },
+    { label: "March 2026", year: 2026, month: "March" },
   ];
 
   return (
@@ -1182,7 +1269,11 @@ function ArchivesPage({ posts }: { posts: Post[] }) {
 
       <div className="archive-grid">
         {months.map((m) => (
-          <Link key={m.label} to={`/archive?month=${m.month}&year=${m.year}`} className="archive-card">
+          <Link
+            key={m.label}
+            to={`/archive?month=${m.month}&year=${m.year}`}
+            className="archive-card"
+          >
             <div>
               <div className="archive-card__label">{m.label}</div>
               <div className="archive-card__sub">{posts.length} posts</div>
@@ -1198,8 +1289,8 @@ function ArchivesPage({ posts }: { posts: Post[] }) {
 /* -- Archive Month Page --------------------------------------------- */
 function ArchiveMonthPage({ posts }: { posts: Post[] }) {
   const [params] = useSearchParams();
-  const month = params.get('month') || 'May';
-  const year = params.get('year') || '2026';
+  const month = params.get("month") || "May";
+  const year = params.get("year") || "2026";
   const label = `${month} ${year}`;
 
   return (
@@ -1233,7 +1324,7 @@ function AdminPanel({
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<PostDraft>(createDraft());
-  const [successMsg, setSuccessMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState("");
 
   const ordered = [...posts].sort((a, b) => b.id - a.id);
 
@@ -1258,7 +1349,7 @@ function AdminPanel({
             : p,
         ),
       );
-      setSuccessMsg('Post updated successfully!');
+      setSuccessMsg("Post updated successfully!");
     } else {
       const newPost: Post = {
         id: Date.now(),
@@ -1266,19 +1357,19 @@ function AdminPanel({
         excerpt: draft.excerpt || draft.content.slice(0, 140),
         content: draft.content || draft.excerpt,
         image: draft.image || HERO_IMAGE,
-        author: draft.author || 'Dylan',
+        author: draft.author || "Dylan",
         authorAvatar: draft.authorAvatar || DEFAULT_AVATAR,
-        date: draft.date || 'Just now',
+        date: draft.date || "Just now",
         views: Number(draft.views) || 0,
         comments: Number(draft.comments) || 0,
         category: draft.category,
       };
       setPosts([...posts, newPost]);
-      setSuccessMsg('Post published successfully!');
+      setSuccessMsg("Post published successfully!");
     }
 
     resetDraft();
-    setTimeout(() => setSuccessMsg(''), 3000);
+    setTimeout(() => setSuccessMsg(""), 3000);
   }
 
   function startEdit(post: Post) {
@@ -1297,7 +1388,9 @@ function AdminPanel({
         <div>
           <p className="section-eyebrow">Admin panel</p>
           <h1 className="page-title">Manage content</h1>
-          <p className="page-subtitle">Edit posts, update metadata, and keep the library current.</p>
+          <p className="page-subtitle">
+            Edit posts, update metadata, and keep the library current.
+          </p>
         </div>
         <div className="status-chip">{posts.length} posts published</div>
       </div>
@@ -1308,8 +1401,12 @@ function AdminPanel({
         <section className="panel-card">
           <div className="panel-head">
             <div>
-              <h2 className="section-title">{editingId ? 'Edit post' : 'Create post'}</h2>
-              <p className="page-subtitle mt-1">Keep it simple and publish quickly.</p>
+              <h2 className="section-title">
+                {editingId ? "Edit post" : "Create post"}
+              </h2>
+              <p className="page-subtitle mt-1">
+                Keep it simple and publish quickly.
+              </p>
             </div>
             {editingId && (
               <button onClick={resetDraft} className="btn-secondary">
@@ -1332,7 +1429,9 @@ function AdminPanel({
               <label>Excerpt</label>
               <textarea
                 value={draft.excerpt}
-                onChange={(e) => setDraft({ ...draft, excerpt: e.target.value })}
+                onChange={(e) =>
+                  setDraft({ ...draft, excerpt: e.target.value })
+                }
                 placeholder="Short summary"
                 rows={3}
               />
@@ -1342,7 +1441,9 @@ function AdminPanel({
               <label>Content</label>
               <textarea
                 value={draft.content}
-                onChange={(e) => setDraft({ ...draft, content: e.target.value })}
+                onChange={(e) =>
+                  setDraft({ ...draft, content: e.target.value })
+                }
                 placeholder="Full article content"
                 rows={8}
               />
@@ -1353,14 +1454,18 @@ function AdminPanel({
                 <label>Image URL</label>
                 <input
                   value={draft.image}
-                  onChange={(e) => setDraft({ ...draft, image: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, image: e.target.value })
+                  }
                 />
               </div>
               <div>
                 <label>Category</label>
                 <select
                   value={draft.category}
-                  onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, category: e.target.value })
+                  }
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c.slug} value={c.slug}>
@@ -1376,7 +1481,9 @@ function AdminPanel({
                 <label>Author</label>
                 <input
                   value={draft.author}
-                  onChange={(e) => setDraft({ ...draft, author: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, author: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -1392,7 +1499,9 @@ function AdminPanel({
                   <input
                     type="number"
                     value={draft.views}
-                    onChange={(e) => setDraft({ ...draft, views: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, views: Number(e.target.value) })
+                    }
                   />
                 </div>
                 <div>
@@ -1400,14 +1509,16 @@ function AdminPanel({
                   <input
                     type="number"
                     value={draft.comments}
-                    onChange={(e) => setDraft({ ...draft, comments: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, comments: Number(e.target.value) })
+                    }
                   />
                 </div>
               </div>
             </div>
 
             <button onClick={handleSubmit} className="auth-submit">
-              {editingId ? 'Save changes' : 'Publish post'}
+              {editingId ? "Save changes" : "Publish post"}
             </button>
           </div>
         </section>
@@ -1433,10 +1544,16 @@ function AdminPanel({
                   <h3 className="admin-post__title">{post.title}</h3>
                   <p className="admin-post__excerpt">{post.excerpt}</p>
                   <div className="admin-post__actions">
-                    <button onClick={() => startEdit(post)} className="btn-secondary">
+                    <button
+                      onClick={() => startEdit(post)}
+                      className="btn-secondary"
+                    >
                       Edit
                     </button>
-                    <button onClick={() => removePost(post.id)} className="btn-danger">
+                    <button
+                      onClick={() => removePost(post.id)}
+                      className="btn-danger"
+                    >
                       Delete
                     </button>
                   </div>
@@ -1459,12 +1576,17 @@ function Footer() {
           <div className="footer-brand">
             <Link to="/" className="brand">
               <div className="brand__mark">
-                <img src={cryptodylLogoImage} alt="CryptoDyl" className="h-7 w-7 object-contain" />
+                <img
+                  src={cryptodylLogoImage}
+                  alt="CryptoDyl"
+                  className="h-7 w-7 object-contain"
+                />
               </div>
               <span className="brand__text">CryptoDyl</span>
             </Link>
             <p>
-              Research-driven crypto intelligence and passive income systems curated with brutal clarity.
+              Research-driven crypto intelligence and passive income systems
+              curated with brutal clarity.
             </p>
             <div className="footer-socials">
               <a href="#">𝕏</a>
@@ -1533,11 +1655,13 @@ function ScrollProgress() {
       setW(Math.min(1, Math.max(0, p)));
     }
     on();
-    window.addEventListener('scroll', on, { passive: true });
-    return () => window.removeEventListener('scroll', on);
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
   }, []);
 
-  return <div className="scroll-progress" style={{ transform: `scaleX(${w})` }} />;
+  return (
+    <div className="scroll-progress" style={{ transform: `scaleX(${w})` }} />
+  );
 }
 
 /* -- Cursor Halo ---------------------------------------------------- */
@@ -1548,13 +1672,13 @@ function CursorHalo() {
 /* -- Brand Ticker --------------------------------------------------- */
 function BrandTicker() {
   const items = [
-    { k: 'BTC', v: '$112,480', c: '+2.45%' },
-    { k: 'ETH', v: '$4,128', c: '+1.85%' },
-    { k: 'BNB', v: '$612', c: '+0.95%' },
-    { k: 'SOL', v: '$248', c: '+1.65%' },
-    { k: 'XRP', v: '$2.84', c: '+1.35%' },
-    { k: 'DOGE', v: '$0.42', c: '+5.23%' },
-    { k: 'ADA', v: '$0.82', c: '+2.11%' },
+    { k: "BTC", v: "$112,480", c: "+2.45%" },
+    { k: "ETH", v: "$4,128", c: "+1.85%" },
+    { k: "BNB", v: "$612", c: "+0.95%" },
+    { k: "SOL", v: "$248", c: "+1.65%" },
+    { k: "XRP", v: "$2.84", c: "+1.35%" },
+    { k: "DOGE", v: "$0.42", c: "+5.23%" },
+    { k: "ADA", v: "$0.82", c: "+2.11%" },
   ];
 
   return (
@@ -1576,7 +1700,9 @@ function BrandTicker() {
 export default function App() {
   const [posts, setPosts] = useState<Post[]>(() => readPosts());
   const [isAdmin, setIsAdmin] = useState<boolean>(() => readAdmin());
-  const [loggedUser, setLoggedUser] = useState<string | null>(() => readLoggedInUser());
+  const [loggedUser, setLoggedUser] = useState<string | null>(() =>
+    readLoggedInUser(),
+  );
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -1586,7 +1712,7 @@ export default function App() {
   function handleLogin(username: string) {
     setIsAdmin(true);
     setLoggedUser(username);
-    localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
+    localStorage.setItem(ADMIN_STORAGE_KEY, "true");
     localStorage.setItem(LOGGED_IN_USER_KEY, username);
   }
 
@@ -1621,22 +1747,38 @@ export default function App() {
           <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/profile/:name" element={<ProfilePage posts={posts} users={readUsers()} />} />
+          <Route
+            path="/profile/:name"
+            element={<ProfilePage posts={posts} users={readUsers()} />}
+          />
           <Route path="/popular" element={<PopularPage posts={posts} />} />
           <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/category/:slug" element={<CategoryPostsPage posts={posts} />} />
+          <Route
+            path="/category/:slug"
+            element={<CategoryPostsPage posts={posts} />}
+          />
           <Route path="/archives" element={<ArchivesPage posts={posts} />} />
           <Route path="/archive" element={<ArchiveMonthPage posts={posts} />} />
           <Route
             path="/admin"
-            element={isAdmin ? <AdminPanel posts={posts} setPosts={setPosts} /> : <LoginPage onLogin={handleLogin} />}
+            element={
+              isAdmin ? (
+                <AdminPanel posts={posts} setPosts={setPosts} />
+              ) : (
+                <LoginPage onLogin={handleLogin} />
+              )
+            }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
         <Footer />
 
-        <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} posts={posts} />
+        <SearchModal
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          posts={posts}
+        />
       </div>
     </Router>
   );

@@ -1,6 +1,7 @@
 // File: src/routes/$.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { cryptodylBrandImage, cryptodylLogoImage } from "@/lib/assets";
+import { SplashScreen } from "@/lib/splash-screen";
 import { lazy, Suspense } from "react";
 
 const App = lazy(() => import("@/cryptodyl/App"));
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/$")({
       { property: "og:title", content: "CryptoDyl — Premium Crypto Ecosystem" },
       {
         property: "og:description",
-        content: "Elite crypto guides, casino reviews, and passive income strategies.",
+        content:
+          "Elite crypto guides, casino reviews, and passive income strategies.",
       },
       { property: "og:image", content: cryptodylBrandImage },
     ],
@@ -28,16 +30,8 @@ export const Route = createFileRoute("/$")({
 
 function SpaShell() {
   return (
-    <Suspense fallback={<SplashLoader />}>
+    <Suspense fallback={<SplashScreen />}>
       <App />
     </Suspense>
-  );
-}
-
-function SplashLoader() {
-  return (
-    <div className="splash-screen">
-      <div className="terminal-loader">INITIALIZING CRYPTODYL...</div>
-    </div>
   );
 }
