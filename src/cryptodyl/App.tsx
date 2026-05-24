@@ -39,6 +39,9 @@ interface Post {
 interface User {
   username: string;
   displayName: string;
+  email: string;
+  password: string;
+  isAdmin: boolean;
   avatar: string;
   bio: string;
   joined: string;
@@ -54,6 +57,7 @@ const POST_STORAGE_KEY = "cryptodyl_posts";
 const ADMIN_STORAGE_KEY = "cryptodyl_admin";
 const USERS_STORAGE_KEY = "cryptodyl_users";
 const LOGGED_IN_USER_KEY = "cryptodyl_logged_in_user";
+const OWNER_EMAIL = "pushkarmhatre424@gmail.com";
 
 const DEFAULT_AVATAR = "https://cryptodyl.com/images/1775422489.png";
 
@@ -183,6 +187,9 @@ const initialUsers: User[] = [
   {
     username: "Dylan",
     displayName: "Dylan",
+    email: "dylan@cryptodyl.com",
+    password: "admin",
+    isAdmin: true,
     avatar: DEFAULT_AVATAR,
     bio: "Crypto enthusiast, passive income explorer, and content creator sharing the best crypto guides since 2024.",
     joined: "January 2024",
@@ -947,22 +954,32 @@ function LoginPage({ onLogin }: { onLogin: (username: string) => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const users = readUsers();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (username.trim() && password === "admin") {
-      onLogin(username.trim());
-      navigate("/admin");
+    const trimmedUsername = username.trim();
+    const user = users.find(
+      (entry) =>
+        entry.username.toLowerCase() === trimmedUsername.toLowerCase() ||
+        entry.email.toLowerCase() === trimmedUsername.toLowerCase(),
+    );
+
+    if (user && user.password === password) {
+      onLogin(user.username);
+      navigate("/");
       return;
     }
-    setError("Invalid credentials. Use any username with password: admin");
+    setError(
+      "Invalid credentials. Use a registered username/email and matching password.",
+    );
   }
 
   return (
-    <motion.main {...pageMotion} className="auth-shell">
-      <div className="auth-card">
-        <div className="section-eyebrow">CryptoDyl</div>
-        <h2 className="auth-title">Welcome back.</h2>
+      <motion.main {...pageMotion} className="auth-shell">
+        <div className="auth-card">
+          <div className="section-eyebrow">CryptoDyl</div>
+          <h2 className="auth-title">Welcome back.</h2>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div>
@@ -987,27 +1004,72 @@ function LoginPage({ onLogin }: { onLogin: (username: string) => void }) {
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="submit" className="auth-submit">
-            Sign in
-          </button>
+            <button type="submit" className="auth-submit">
+              Sign in
+            </button>
 
-          <p className="auth-note">Demo: any username / admin</p>
-        </form>
-      </div>
-    </motion.main>
-  );
-}
+            <div className="auth-actions-row">
+              <Link to="/register" className="auth-secondary-link">
+                Create account
+              </Link>
+              <p className="auth-note">Use your registered username or email</p>
+            </div>
+          </form>
+        </div>
+      </motion.main>
+    );
+  }
 
 /* -- Register Page --------------------------------------------------- */
 function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password.trim()) return;
+    const displayName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!displayName || !trimmedEmail || trimmedPassword.length < 6) {
+      setError("Fill out all fields and use a password with at least 6 characters.");
+      return;
+    }
+
+    const users = readUsers();
+    const conflict = users.some(
+      (user: User) =>
+        user.username.toLowerCase() === displayName.toLowerCase() ||
+        user.email.toLowerCase() === trimmedEmail,
+    );
+
+    if (conflict) {
+      setError("That username or email is already registered.");
+      return;
+    }
+
+    const newUser: User = {
+      username: displayName,
+      displayName,
+      email: trimmedEmail,
+      password: trimmedPassword,
+      isAdmin: false,
+      avatar: DEFAULT_AVATAR,
+      bio: "New CryptoDyl member.",
+      joined: new Date().toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+    };
+
+    localStorage.setItem(
+      USERS_STORAGE_KEY,
+      JSON.stringify([...users, newUser]),
+    );
+    setError("");
     setDone(true);
   }
 
@@ -1033,7 +1095,7 @@ function RegisterPage() {
               Sign up to comment, follow authors, and publish guides.
             </p>
 
-            <form onSubmit={handleSubmit} className="auth-form">
+              <form onSubmit={handleSubmit} className="auth-form">
               <div>
                 <label>Display name</label>
                 <input
@@ -1060,12 +1122,13 @@ function RegisterPage() {
                   placeholder="At least 6 characters"
                 />
               </div>
-              <button type="submit" className="auth-submit">
-                Create account
-              </button>
-            </form>
-          </>
-        )}
+                <button type="submit" className="auth-submit">
+                  Create account
+                </button>
+                {error && <p className="auth-error">{error}</p>}
+              </form>
+            </>
+          )}
       </div>
     </motion.main>
   );
@@ -1164,6 +1227,79 @@ function ProfilePage({ posts, users }: { posts: Post[]; users: User[] }) {
         )}
       </div>
     </motion.main>
+  );
+}
+
+function AdminAccessPanel({
+  users,
+  setUsers,
+  currentUserEmail,
+}: {
+  users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  currentUserEmail: string | null;
+}) {
+  const canManageAdmins = currentUserEmail === OWNER_EMAIL;
+
+  if (!canManageAdmins) {
+    return (
+      <div className="panel-card mt-6">
+        <h2 className="section-title">Admin access</h2>
+        <p className="page-subtitle mt-3">
+          Only the main admin can manage admin roles.
+        </p>
+      </div>
+    );
+  }
+
+  function toggleAdmin(email: string) {
+    if (email === OWNER_EMAIL) return;
+    setUsers(
+      users.map((user) =>
+        user.email === email ? { ...user, isAdmin: !user.isAdmin } : user,
+      ),
+    );
+  }
+
+  return (
+    <div className="panel-card mt-6">
+      <div className="panel-head">
+        <div>
+          <h2 className="section-title">Manage admins</h2>
+          <p className="page-subtitle mt-1">
+            Only {OWNER_EMAIL} can promote or demote other users.
+          </p>
+        </div>
+      </div>
+
+      <div className="admin-users">
+        {users.map((user) => {
+          const isOwner = user.email === OWNER_EMAIL;
+          return (
+            <div key={user.email} className="admin-user-row">
+              <div>
+                <div className="admin-user-row__name">
+                  {user.displayName}
+                  {isOwner && <span className="status-chip">Owner</span>}
+                  {user.isAdmin && !isOwner && (
+                    <span className="status-chip">Admin</span>
+                  )}
+                </div>
+                <div className="admin-user-row__meta">{user.email}</div>
+              </div>
+              {!isOwner && (
+                <button
+                  onClick={() => toggleAdmin(user.email)}
+                  className="btn-secondary"
+                >
+                  {user.isAdmin ? "Remove admin" : "Make admin"}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -1699,26 +1835,45 @@ function BrandTicker() {
 /* -- App ------------------------------------------------------------ */
 export default function App() {
   const [posts, setPosts] = useState<Post[]>(() => readPosts());
+  const [users, setUsers] = useState<User[]>(() => readUsers());
   const [isAdmin, setIsAdmin] = useState<boolean>(() => readAdmin());
   const [loggedUser, setLoggedUser] = useState<string | null>(() =>
     readLoggedInUser(),
   );
+  const [loggedUserEmail, setLoggedUserEmail] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(POST_STORAGE_KEY, JSON.stringify(posts));
   }, [posts]);
 
+  useEffect(() => {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  }, [users]);
+
   function handleLogin(username: string) {
-    setIsAdmin(true);
-    setLoggedUser(username);
-    localStorage.setItem(ADMIN_STORAGE_KEY, "true");
-    localStorage.setItem(LOGGED_IN_USER_KEY, username);
+    const user = users.find(
+      (entry) =>
+        entry.username.toLowerCase() === username.toLowerCase() ||
+        entry.email.toLowerCase() === username.toLowerCase(),
+    );
+
+    const isMainAdmin = user?.email === OWNER_EMAIL;
+    setIsAdmin(Boolean(user?.isAdmin || isMainAdmin));
+    setLoggedUser(user?.username ?? username);
+    setLoggedUserEmail(user?.email ?? null);
+    if (user?.isAdmin || isMainAdmin) {
+      localStorage.setItem(ADMIN_STORAGE_KEY, "true");
+    } else {
+      localStorage.removeItem(ADMIN_STORAGE_KEY);
+    }
+    localStorage.setItem(LOGGED_IN_USER_KEY, user?.username ?? username);
   }
 
   function handleLogout() {
     setIsAdmin(false);
     setLoggedUser(null);
+    setLoggedUserEmail(null);
     localStorage.removeItem(ADMIN_STORAGE_KEY);
     localStorage.removeItem(LOGGED_IN_USER_KEY);
   }
@@ -1763,7 +1918,17 @@ export default function App() {
             path="/admin"
             element={
               isAdmin ? (
-                <AdminPanel posts={posts} setPosts={setPosts} />
+                <>
+                  <AdminPanel
+                    posts={posts}
+                    setPosts={setPosts}
+                  />
+                  <AdminAccessPanel
+                    users={users}
+                    setUsers={setUsers}
+                    currentUserEmail={loggedUserEmail}
+                  />
+                </>
               ) : (
                 <LoginPage onLogin={handleLogin} />
               )
