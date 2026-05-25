@@ -2090,6 +2090,19 @@ img {
   font-weight: 700;
 }
 
+.admin-user-row__button-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.admin-danger-btn {
+  background: linear-gradient(180deg, rgba(255, 90, 103, 0.95), rgba(224, 56, 72, 0.95)) !important;
+  color: white !important;
+  box-shadow: 0 0 18px rgba(255, 90, 103, 0.12);
+}
+
 .admin-user-list {
   display: grid;
   gap: 12px;

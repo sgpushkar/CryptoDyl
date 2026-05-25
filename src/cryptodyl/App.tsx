@@ -69,8 +69,6 @@ const POST_STORAGE_KEY = "cryptodyl_posts";
 const ADMIN_STORAGE_KEY = "cryptodyl_admin";
 const USERS_STORAGE_KEY = "cryptodyl_users";
 const LOGGED_IN_USER_KEY = "cryptodyl_logged_in_user";
-const OWNER_EMAIL = "pushkarmhatre424@gmail.com";
-
 const DEFAULT_AVATAR = "https://cryptodyl.com/images/1775422489.png";
 
 const CATEGORIES = [
@@ -1369,6 +1367,7 @@ function AdminPanel({
   setUsers,
   currentUserEmail,
   onLogout,
+  onIdentityChanged,
 }: {
   posts: Post[];
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
@@ -1376,6 +1375,7 @@ function AdminPanel({
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   currentUserEmail: string | null;
   onLogout: () => void;
+  onIdentityChanged: (nextUsername: string, nextEmail: string) => void;
 }) {
   const navigate = useNavigate();
   const currentUser =
@@ -1396,6 +1396,11 @@ function AdminPanel({
     views: 0,
     comments: 0,
     category: "casinos",
+  });
+  const [credentialDraft, setCredentialDraft] = useState({
+    username: "",
+    email: "",
+    password: "",
   });
 
   const totalPosts = posts.length;
@@ -1446,6 +1451,15 @@ function AdminPanel({
       category: "casinos",
     });
   }
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setCredentialDraft({
+      username: currentUser.username,
+      email: currentUser.email,
+      password: currentUser.password,
+    });
+  }, [currentUser?.email, currentUser?.password, currentUser?.username]);
 
   function handleSidebarAction(section: (typeof sidebarItems)[number]["section"]) {
     setActiveSection(section);
@@ -1538,6 +1552,22 @@ function AdminPanel({
     flash("User permissions updated.");
   }
 
+  function removeUser(email: string) {
+    if (email === currentUserEmail) {
+      flash("You cannot remove the account you are currently using.");
+      return;
+    }
+
+    const target = users.find((user) => user.email === email);
+    if (target?.isAdmin && users.filter((user) => user.isAdmin).length <= 1) {
+      flash("Keep at least one admin account.");
+      return;
+    }
+
+    setUsers((prev) => prev.filter((user) => user.email !== email));
+    flash("User removed.");
+  }
+
   function updateProfile(next: Partial<User>) {
     if (!currentUser) return;
     setUsers((prev) =>
@@ -1547,6 +1577,57 @@ function AdminPanel({
     );
     flash("Profile saved.");
   }
+
+  function saveCredentials() {
+    if (!currentUser) return;
+
+    const nextUsername = credentialDraft.username.trim();
+    const nextEmail = credentialDraft.email.trim().toLowerCase();
+    const nextPassword = credentialDraft.password.trim();
+
+    if (!nextUsername || !nextEmail || nextPassword.length < 6) {
+      flash("Enter a username, valid email, and a password with 6+ characters.");
+      return;
+    }
+
+    const collision = users.some(
+      (user) =>
+        user.email !== currentUser.email &&
+        (user.username.toLowerCase() === nextUsername.toLowerCase() ||
+          user.email.toLowerCase() === nextEmail),
+    );
+
+    if (collision) {
+      flash("That username or email is already in use.");
+      return;
+    }
+
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.email === currentUser.email
+          ? {
+              ...user,
+              username: nextUsername,
+              displayName: nextUsername,
+              email: nextEmail,
+              password: nextPassword,
+              isAdmin: true,
+            }
+          : user,
+      ),
+    );
+    onIdentityChanged(nextUsername, nextEmail);
+    flash("Admin credentials updated.");
+  }
+
+  useEffect(() => {
+    if (activeSection !== "posts" || editingId) return;
+    setDraft((prev) => ({
+      ...prev,
+      author: currentUser?.displayName ?? prev.author,
+      authorAvatar: currentUser?.avatar ?? prev.authorAvatar,
+    }));
+  }, [activeSection, currentUser?.avatar, currentUser?.displayName, editingId]);
 
   function renderSection() {
     if (activeSection === "posts") {
@@ -1734,9 +1815,18 @@ function AdminPanel({
                     {user.email === currentUserEmail ? (
                       <span className="status-chip">You</span>
                     ) : (
-                      <button type="button" onClick={() => toggleAdmin(user.email)}>
-                        {user.isAdmin ? "Remove admin" : "Make admin"}
-                      </button>
+                      <div className="admin-user-row__button-group">
+                        <button type="button" onClick={() => toggleAdmin(user.email)}>
+                          {user.isAdmin ? "Remove admin" : "Make admin"}
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-danger-btn"
+                          onClick={() => removeUser(user.email)}
+                        >
+                          Remove user
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1754,10 +1844,58 @@ function AdminPanel({
             <div className="admin-panel__head">
               <div>
                 <h2>Admin profile</h2>
-                <p>Update the active admin account.</p>
+                <p>Update the active admin account and login details.</p>
               </div>
             </div>
             <div className="admin-form">
+              <div className="admin-form__row">
+                <div className="admin-field">
+                  <label>Username</label>
+                  <input
+                    value={credentialDraft.username}
+                    onChange={(e) =>
+                      setCredentialDraft((prev) => ({
+                        ...prev,
+                        username: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="admin-field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={credentialDraft.email}
+                    onChange={(e) =>
+                      setCredentialDraft((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="admin-form__row">
+                <div className="admin-field">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    value={credentialDraft.password}
+                    onChange={(e) =>
+                      setCredentialDraft((prev) => ({
+                        ...prev,
+                        password: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="admin-field admin-field--action">
+                  <label>&nbsp;</label>
+                  <button type="button" className="auth-submit" onClick={saveCredentials}>
+                    Save credentials
+                  </button>
+                </div>
+              </div>
               <div className="admin-form__row">
                 <div className="admin-field">
                   <label>Display name</label>
@@ -2171,16 +2309,24 @@ export default function App() {
         entry.email.toLowerCase() === username.toLowerCase(),
     );
 
-    const isMainAdmin = user?.email === OWNER_EMAIL;
-    setIsAdmin(Boolean(user?.isAdmin || isMainAdmin));
+    setIsAdmin(Boolean(user?.isAdmin));
     setLoggedUser(user?.username ?? username);
     setLoggedUserEmail(user?.email ?? null);
-    if (user?.isAdmin || isMainAdmin) {
+    if (user?.isAdmin) {
       localStorage.setItem(ADMIN_STORAGE_KEY, "true");
     } else {
       localStorage.removeItem(ADMIN_STORAGE_KEY);
     }
     localStorage.setItem(LOGGED_IN_USER_KEY, user?.username ?? username);
+  }
+
+  function handleAdminIdentityChange(
+    nextUsername: string,
+    nextEmail: string,
+  ) {
+    setLoggedUser(nextUsername);
+    setLoggedUserEmail(nextEmail);
+    localStorage.setItem(LOGGED_IN_USER_KEY, nextUsername);
   }
 
   function handleLogout() {
@@ -2238,6 +2384,7 @@ export default function App() {
                   setUsers={setUsers}
                   currentUserEmail={loggedUserEmail}
                   onLogout={handleLogout}
+                  onIdentityChanged={handleAdminIdentityChange}
                 />
               ) : (
                 <LoginPage onLogin={handleLogin} />
