@@ -1,6 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BarChart3,
+  Bell,
+  BookOpen,
+  Boxes,
+  ChevronDown,
+  FileText,
+  Globe,
+  Layers3,
+  LayoutDashboard,
+  LogOut,
+  Monitor,
+  Settings,
+  ShieldCheck,
+  Users2,
+} from "lucide-react";
+import {
   BrowserRouter as Router,
   Link,
   Navigate,
@@ -15,7 +31,6 @@ import {
   categoryCasinosImage,
   categoryEventsImage,
   categoryPassiveIncomeImage,
-  cryptodylHeroImage,
   cryptodylLogoImage,
 } from "@/lib/assets";
 
@@ -47,12 +62,9 @@ interface User {
   joined: string;
 }
 
-type PostDraft = Omit<Post, "id">;
-
 /* ------------------------------------------------------------------ */
 /* Constants */
 /* ------------------------------------------------------------------ */
-const HERO_IMAGE = cryptodylHeroImage;
 const POST_STORAGE_KEY = "cryptodyl_posts";
 const ADMIN_STORAGE_KEY = "cryptodyl_admin";
 const USERS_STORAGE_KEY = "cryptodyl_users";
@@ -225,34 +237,6 @@ function readAdmin(): boolean {
 function readLoggedInUser(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(LOGGED_IN_USER_KEY);
-}
-
-function createDraft(post?: Post): PostDraft {
-  return post
-    ? {
-        title: post.title,
-        excerpt: post.excerpt,
-        content: post.content,
-        image: post.image,
-        author: post.author,
-        authorAvatar: post.authorAvatar,
-        date: post.date,
-        views: post.views,
-        comments: post.comments,
-        category: post.category,
-      }
-    : {
-        title: "",
-        excerpt: "",
-        content: "",
-        image: HERO_IMAGE,
-        author: "Dylan",
-        authorAvatar: DEFAULT_AVATAR,
-        date: "Just now",
-        views: 0,
-        comments: 0,
-        category: "casinos",
-      };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1230,79 +1214,6 @@ function ProfilePage({ posts, users }: { posts: Post[]; users: User[] }) {
   );
 }
 
-function AdminAccessPanel({
-  users,
-  setUsers,
-  currentUserEmail,
-}: {
-  users: User[];
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
-  currentUserEmail: string | null;
-}) {
-  const canManageAdmins = currentUserEmail === OWNER_EMAIL;
-
-  if (!canManageAdmins) {
-    return (
-      <div className="panel-card mt-6">
-        <h2 className="section-title">Admin access</h2>
-        <p className="page-subtitle mt-3">
-          Only the main admin can manage admin roles.
-        </p>
-      </div>
-    );
-  }
-
-  function toggleAdmin(email: string) {
-    if (email === OWNER_EMAIL) return;
-    setUsers(
-      users.map((user) =>
-        user.email === email ? { ...user, isAdmin: !user.isAdmin } : user,
-      ),
-    );
-  }
-
-  return (
-    <div className="panel-card mt-6">
-      <div className="panel-head">
-        <div>
-          <h2 className="section-title">Manage admins</h2>
-          <p className="page-subtitle mt-1">
-            Only {OWNER_EMAIL} can promote or demote other users.
-          </p>
-        </div>
-      </div>
-
-      <div className="admin-users">
-        {users.map((user) => {
-          const isOwner = user.email === OWNER_EMAIL;
-          return (
-            <div key={user.email} className="admin-user-row">
-              <div>
-                <div className="admin-user-row__name">
-                  {user.displayName}
-                  {isOwner && <span className="status-chip">Owner</span>}
-                  {user.isAdmin && !isOwner && (
-                    <span className="status-chip">Admin</span>
-                  )}
-                </div>
-                <div className="admin-user-row__meta">{user.email}</div>
-              </div>
-              {!isOwner && (
-                <button
-                  onClick={() => toggleAdmin(user.email)}
-                  className="btn-secondary"
-                >
-                  {user.isAdmin ? "Remove admin" : "Make admin"}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* -- Popular Page --------------------------------------------------- */
 function PopularPage({ posts }: { posts: Post[] }) {
   const sorted = [...posts].sort((a, b) => b.views - a.views);
@@ -1454,251 +1365,653 @@ function ArchiveMonthPage({ posts }: { posts: Post[] }) {
 function AdminPanel({
   posts,
   setPosts,
+  users,
+  setUsers,
+  currentUserEmail,
+  onLogout,
 }: {
   posts: Post[];
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
+  users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  currentUserEmail: string | null;
+  onLogout: () => void;
 }) {
+  const navigate = useNavigate();
+  const currentUser =
+    users.find((user) => user.email === currentUserEmail) ?? users[0];
+  const [activeSection, setActiveSection] = useState<
+    "dashboard" | "posts" | "pages" | "categories" | "settings" | "profile" | "users"
+  >("dashboard");
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [draft, setDraft] = useState<PostDraft>(createDraft());
-  const [successMsg, setSuccessMsg] = useState("");
+  const [notice, setNotice] = useState("");
+  const [draft, setDraft] = useState({
+    title: "",
+    excerpt: "",
+    content: "",
+    image: "",
+    author: currentUser?.displayName ?? "Dylan",
+    authorAvatar: currentUser?.avatar ?? cryptodylLogoImage,
+    date: "Just now",
+    views: 0,
+    comments: 0,
+    category: "casinos",
+  });
 
-  const ordered = [...posts].sort((a, b) => b.id - a.id);
+  const totalPosts = posts.length;
+  const unpublishedPosts = posts.filter((post) => !post.content.trim()).length;
+  const totalUsers = users.length;
+  const adminUsers = users.filter((user) => user.isAdmin).length;
+  const latestPost = [...posts].sort((a, b) => b.id - a.id)[0];
+  const orderedPosts = [...posts].sort((a, b) => b.id - a.id);
 
-  function resetDraft() {
-    setDraft(createDraft());
-    setEditingId(null);
+  const sidebarItems = [
+    { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" as const },
+    { icon: FileText, label: "Posts", section: "posts" as const },
+    { icon: BookOpen, label: "Pages", section: "pages" as const },
+    { icon: Boxes, label: "Categories", section: "categories" as const },
+    { icon: Settings, label: "Settings", section: "settings" as const },
+    { icon: ShieldCheck, label: "Admin Profile", section: "profile" as const },
+    { icon: Users2, label: "Users", section: "users" as const },
+  ] as const;
+
+  const cards = [
+    { title: "Total Posts", value: totalPosts, label: "Posts", icon: FileText },
+    {
+      title: "Unpublished Posts",
+      value: unpublishedPosts,
+      label: "Unpublished Posts",
+      icon: FileText,
+    },
+    { title: "Total Users", value: totalUsers, label: "Users", icon: Users2 },
+  ];
+
+  function flash(message: string) {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 2200);
   }
 
-  function handleSubmit() {
-    if (!draft.title.trim()) return;
+  function resetDraft() {
+    setEditingId(null);
+    setDraft({
+      title: "",
+      excerpt: "",
+      content: "",
+      image: "",
+      author: currentUser?.displayName ?? "Dylan",
+      authorAvatar: currentUser?.avatar ?? cryptodylLogoImage,
+      date: "Just now",
+      views: 0,
+      comments: 0,
+      category: "casinos",
+    });
+  }
 
-    if (editingId) {
-      setPosts(
-        posts.map((p) =>
-          p.id === editingId
-            ? {
-                ...p,
-                ...draft,
-                views: Number(draft.views) || 0,
-                comments: Number(draft.comments) || 0,
-              }
-            : p,
-        ),
-      );
-      setSuccessMsg("Post updated successfully!");
-    } else {
-      const newPost: Post = {
-        id: Date.now(),
-        title: draft.title,
-        excerpt: draft.excerpt || draft.content.slice(0, 140),
-        content: draft.content || draft.excerpt,
-        image: draft.image || HERO_IMAGE,
-        author: draft.author || "Dylan",
-        authorAvatar: draft.authorAvatar || DEFAULT_AVATAR,
-        date: draft.date || "Just now",
-        views: Number(draft.views) || 0,
-        comments: Number(draft.comments) || 0,
-        category: draft.category,
-      };
-      setPosts([...posts, newPost]);
-      setSuccessMsg("Post published successfully!");
-    }
-
-    resetDraft();
-    setTimeout(() => setSuccessMsg(""), 3000);
+  function handleSidebarAction(section: (typeof sidebarItems)[number]["section"]) {
+    setActiveSection(section);
+    if (section === "dashboard") flash("Dashboard loaded.");
   }
 
   function startEdit(post: Post) {
     setEditingId(post.id);
-    setDraft(createDraft(post));
+    setActiveSection("posts");
+    setDraft({
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      image: post.image,
+      author: post.author,
+      authorAvatar: post.authorAvatar,
+      date: post.date,
+      views: post.views,
+      comments: post.comments,
+      category: post.category,
+    });
   }
 
-  function removePost(id: number) {
-    setPosts(posts.filter((p) => p.id !== id));
+  function savePost() {
+    if (!draft.title.trim()) {
+      flash("Title is required.");
+      return;
+    }
+
+    if (editingId) {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === editingId
+            ? {
+                ...post,
+                title: draft.title,
+                excerpt: draft.excerpt || draft.content.slice(0, 140),
+                content: draft.content || draft.excerpt,
+                image: draft.image || post.image,
+                author: draft.author,
+                authorAvatar: draft.authorAvatar,
+                date: draft.date,
+                views: Number(draft.views) || 0,
+                comments: Number(draft.comments) || 0,
+                category: draft.category,
+              }
+            : post,
+        ),
+      );
+      flash("Post updated successfully.");
+    } else {
+      setPosts((prev) => [
+        {
+          id: Date.now(),
+          title: draft.title,
+          excerpt: draft.excerpt || draft.content.slice(0, 140),
+          content: draft.content || draft.excerpt,
+          image: draft.image || cryptodylLogoImage,
+          author: draft.author || currentUser?.displayName || "Dylan",
+          authorAvatar: draft.authorAvatar || currentUser?.avatar || cryptodylLogoImage,
+          date: draft.date || "Just now",
+          views: Number(draft.views) || 0,
+          comments: Number(draft.comments) || 0,
+          category: draft.category,
+        },
+        ...prev,
+      ]);
+      flash("Post published successfully.");
+    }
+
+    resetDraft();
+  }
+
+  function deletePost(id: number) {
+    setPosts((prev) => prev.filter((post) => post.id !== id));
     if (editingId === id) resetDraft();
+    flash("Post deleted.");
+  }
+
+  function toggleAdmin(email: string) {
+    if (email === currentUserEmail) {
+      flash("You cannot remove your own admin access.");
+      return;
+    }
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.email === email ? { ...user, isAdmin: !user.isAdmin } : user,
+      ),
+    );
+    flash("User permissions updated.");
+  }
+
+  function updateProfile(next: Partial<User>) {
+    if (!currentUser) return;
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.email === currentUser.email ? { ...user, ...next } : user,
+      ),
+    );
+    flash("Profile saved.");
+  }
+
+  function renderSection() {
+    if (activeSection === "posts") {
+      return (
+        <section className="admin-section">
+          <div className="admin-section__grid">
+            <article className="admin-panel">
+              <div className="admin-panel__head">
+                <div>
+                  <h2>{editingId ? "Edit post" : "Create post"}</h2>
+                  <p>Publish or update CryptoDyl content.</p>
+                </div>
+                {editingId && (
+                  <button type="button" className="admin-text-btn" onClick={resetDraft}>
+                    Cancel edit
+                  </button>
+                )}
+              </div>
+
+              <div className="admin-form">
+                <div className="admin-field">
+                  <label>Title</label>
+                  <input
+                    value={draft.title}
+                    onChange={(e) =>
+                      setDraft((prev) => ({ ...prev, title: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="admin-field">
+                  <label>Excerpt</label>
+                  <textarea
+                    value={draft.excerpt}
+                    onChange={(e) =>
+                      setDraft((prev) => ({ ...prev, excerpt: e.target.value }))
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div className="admin-field">
+                  <label>Content</label>
+                  <textarea
+                    value={draft.content}
+                    onChange={(e) =>
+                      setDraft((prev) => ({ ...prev, content: e.target.value }))
+                    }
+                    rows={7}
+                  />
+                </div>
+                <div className="admin-form__row">
+                  <div className="admin-field">
+                    <label>Image URL</label>
+                    <input
+                      value={draft.image}
+                      onChange={(e) =>
+                        setDraft((prev) => ({ ...prev, image: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="admin-field">
+                    <label>Category</label>
+                    <select
+                      value={draft.category}
+                      onChange={(e) =>
+                        setDraft((prev) => ({ ...prev, category: e.target.value }))
+                      }
+                    >
+                      {CATEGORIES.map((category) => (
+                        <option key={category.slug} value={category.slug}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="admin-form__row">
+                  <div className="admin-field">
+                    <label>Author</label>
+                    <input
+                      value={draft.author}
+                      onChange={(e) =>
+                        setDraft((prev) => ({ ...prev, author: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="admin-field">
+                    <label>Date label</label>
+                    <input
+                      value={draft.date}
+                      onChange={(e) =>
+                        setDraft((prev) => ({ ...prev, date: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="admin-form__row admin-form__row--compact">
+                  <div className="admin-field">
+                    <label>Views</label>
+                    <input
+                      type="number"
+                      value={draft.views}
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          views: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="admin-field">
+                    <label>Comments</label>
+                    <input
+                      type="number"
+                      value={draft.comments}
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          comments: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                  <button type="button" className="auth-submit" onClick={savePost}>
+                    {editingId ? "Save changes" : "Publish post"}
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <article className="admin-panel">
+              <div className="admin-panel__head">
+                <div>
+                  <h2>Published posts</h2>
+                  <p>Latest articles are listed first.</p>
+                </div>
+              </div>
+
+              <div className="admin-list">
+                {orderedPosts.map((post) => (
+                  <div key={post.id} className="admin-list-item">
+                    <img src={post.image} alt="" />
+                    <div className="admin-list-item__body">
+                      <div className="admin-list-item__meta">
+                        <span>{post.category}</span>
+                        <span>{post.date}</span>
+                      </div>
+                      <h3>{post.title}</h3>
+                      <p>{post.excerpt}</p>
+                      <div className="admin-list-item__actions">
+                        <button type="button" onClick={() => startEdit(post)}>
+                          Edit
+                        </button>
+                        <button type="button" onClick={() => deletePost(post.id)}>
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
+        </section>
+      );
+    }
+
+    if (activeSection === "users") {
+      return (
+        <section className="admin-section">
+          <article className="admin-panel">
+            <div className="admin-panel__head">
+              <div>
+                <h2>Users</h2>
+                <p>Promote or demote users from here.</p>
+              </div>
+            </div>
+            <div className="admin-user-list">
+              {users.map((user) => (
+                <div key={user.email} className="admin-user-row">
+                  <div>
+                    <strong>{user.displayName}</strong>
+                    <div className="admin-user-row__meta">{user.email}</div>
+                  </div>
+                  <div className="admin-user-row__actions">
+                    {user.email === currentUserEmail ? (
+                      <span className="status-chip">You</span>
+                    ) : (
+                      <button type="button" onClick={() => toggleAdmin(user.email)}>
+                        {user.isAdmin ? "Remove admin" : "Make admin"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
+      );
+    }
+
+    if (activeSection === "profile") {
+      return (
+        <section className="admin-section">
+          <article className="admin-panel">
+            <div className="admin-panel__head">
+              <div>
+                <h2>Admin profile</h2>
+                <p>Update the active admin account.</p>
+              </div>
+            </div>
+            <div className="admin-form">
+              <div className="admin-form__row">
+                <div className="admin-field">
+                  <label>Display name</label>
+                  <input
+                    value={currentUser?.displayName ?? ""}
+                    onChange={(e) => updateProfile({ displayName: e.target.value })}
+                  />
+                </div>
+                <div className="admin-field">
+                  <label>Avatar URL</label>
+                  <input
+                    value={currentUser?.avatar ?? ""}
+                    onChange={(e) => updateProfile({ avatar: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="admin-field">
+                <label>Bio</label>
+                <textarea
+                  value={currentUser?.bio ?? ""}
+                  onChange={(e) => updateProfile({ bio: e.target.value })}
+                  rows={5}
+                />
+              </div>
+            </div>
+          </article>
+        </section>
+      );
+    }
+
+    if (activeSection === "categories") {
+      return (
+        <section className="admin-section">
+          <article className="admin-panel">
+            <div className="admin-panel__head">
+              <div>
+                <h2>Categories</h2>
+                <p>Quick access to category pages.</p>
+              </div>
+            </div>
+            <div className="admin-link-grid">
+              {CATEGORIES.map((category) => (
+                <button
+                  key={category.slug}
+                  type="button"
+                  onClick={() => navigate(`/category/${category.slug}`)}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </article>
+        </section>
+      );
+    }
+
+    if (activeSection === "pages") {
+      return (
+        <section className="admin-section">
+          <article className="admin-panel">
+            <div className="admin-panel__head">
+              <div>
+                <h2>Pages</h2>
+                <p>Jump to public pages and archives.</p>
+              </div>
+            </div>
+            <div className="admin-link-grid">
+              <button type="button" onClick={() => navigate("/")}>
+                Home
+              </button>
+              <button type="button" onClick={() => navigate("/posts")}>
+                Posts
+              </button>
+              <button type="button" onClick={() => navigate("/archives")}>
+                Archives
+              </button>
+              <button type="button" onClick={() => navigate("/popular")}>
+                Popular
+              </button>
+            </div>
+          </article>
+        </section>
+      );
+    }
+
+    if (activeSection === "settings") {
+      return (
+        <section className="admin-section">
+          <article className="admin-panel">
+            <div className="admin-panel__head">
+              <div>
+                <h2>Settings</h2>
+                <p>Basic operational summary for the admin panel.</p>
+              </div>
+            </div>
+            <div className="admin-setting-stats">
+              <div>
+                <span>Posts</span>
+                <strong>{totalPosts}</strong>
+              </div>
+              <div>
+                <span>Users</span>
+                <strong>{totalUsers}</strong>
+              </div>
+              <div>
+                <span>Admins</span>
+                <strong>{adminUsers}</strong>
+              </div>
+              <div>
+                <span>Unpublished</span>
+                <strong>{unpublishedPosts}</strong>
+              </div>
+            </div>
+          </article>
+        </section>
+      );
+    }
+
+    return (
+      <>
+        {notice && <div className="admin-notice">{notice}</div>}
+        <div className="admin-cards">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <article key={card.title} className="admin-metric-card">
+                <div className="admin-metric-card__icon">
+                  <Icon size={48} strokeWidth={1.9} />
+                </div>
+                <div className="admin-metric-card__body">
+                  <div className="admin-metric-card__label">
+                    {card.title}: {card.value}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSidebarAction(
+                        card.label === "Users" ? "users" : "posts",
+                      )
+                    }
+                  >
+                    {card.label}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="admin-quick-grid">
+          <article className="admin-quick-card">
+            <div className="admin-quick-card__head">
+              <h2>Content overview</h2>
+              <BarChart3 size={18} />
+            </div>
+            <p>
+              {totalPosts} live posts, {totalUsers} registered users, and the
+              newest article is{" "}
+              <strong>{latestPost?.title ?? "not available yet"}</strong>.
+            </p>
+          </article>
+
+          <article className="admin-quick-card">
+            <div className="admin-quick-card__head">
+              <h2>Admin links</h2>
+              <Bell size={18} />
+            </div>
+            <div className="admin-quick-links">
+              <span>
+                <Layers3 size={14} /> Manage content
+              </span>
+              <span>
+                <Globe size={14} /> View public website
+              </span>
+              <span>
+                <ShieldCheck size={14} /> Security settings
+              </span>
+            </div>
+          </article>
+        </div>
+      </>
+    );
   }
 
   return (
-    <motion.main {...pageMotion} className="page-shell">
-      <div className="page-head">
-        <div>
-          <p className="section-eyebrow">Admin panel</p>
-          <h1 className="page-title">Manage content</h1>
-          <p className="page-subtitle">
-            Edit posts, update metadata, and keep the library current.
-          </p>
+    <motion.main {...pageMotion} className="admin-shell">
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar__brand">
+          <span>Admin Panel</span>
         </div>
-        <div className="status-chip">{posts.length} posts published</div>
-      </div>
 
-      {successMsg && <div className="success-banner">{successMsg}</div>}
-
-      <div className="admin-grid">
-        <section className="panel-card">
-          <div className="panel-head">
-            <div>
-              <h2 className="section-title">
-                {editingId ? "Edit post" : "Create post"}
-              </h2>
-              <p className="page-subtitle mt-1">
-                Keep it simple and publish quickly.
-              </p>
-            </div>
-            {editingId && (
-              <button onClick={resetDraft} className="btn-secondary">
-                Cancel
-              </button>
-            )}
-          </div>
-
-          <div className="admin-form">
-            <div>
-              <label>Title</label>
-              <input
-                value={draft.title}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                placeholder="Post title"
-              />
-            </div>
-
-            <div>
-              <label>Excerpt</label>
-              <textarea
-                value={draft.excerpt}
-                onChange={(e) =>
-                  setDraft({ ...draft, excerpt: e.target.value })
-                }
-                placeholder="Short summary"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label>Content</label>
-              <textarea
-                value={draft.content}
-                onChange={(e) =>
-                  setDraft({ ...draft, content: e.target.value })
-                }
-                placeholder="Full article content"
-                rows={8}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label>Image URL</label>
-                <input
-                  value={draft.image}
-                  onChange={(e) =>
-                    setDraft({ ...draft, image: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label>Category</label>
-                <select
-                  value={draft.category}
-                  onChange={(e) =>
-                    setDraft({ ...draft, category: e.target.value })
-                  }
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <label>Author</label>
-                <input
-                  value={draft.author}
-                  onChange={(e) =>
-                    setDraft({ ...draft, author: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label>Date label</label>
-                <input
-                  value={draft.date}
-                  onChange={(e) => setDraft({ ...draft, date: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label>Views</label>
-                  <input
-                    type="number"
-                    value={draft.views}
-                    onChange={(e) =>
-                      setDraft({ ...draft, views: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div>
-                  <label>Comments</label>
-                  <input
-                    type="number"
-                    value={draft.comments}
-                    onChange={(e) =>
-                      setDraft({ ...draft, comments: Number(e.target.value) })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button onClick={handleSubmit} className="auth-submit">
-              {editingId ? "Save changes" : "Publish post"}
-            </button>
-          </div>
-        </section>
-
-        <section className="panel-card">
-          <h2 className="section-title mb-6">Published posts</h2>
-          <div className="space-y-4">
-            {ordered.map((post) => (
-              <motion.article
-                key={post.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="admin-post"
+        <nav className="admin-sidebar__nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.label}
+                className={`admin-sidebar__item ${
+                  activeSection === item.section ? "is-active" : ""
+                }`}
+                type="button"
+                onClick={() => handleSidebarAction(item.section)}
               >
-                <img src={post.image} alt="" className="admin-post__img" />
-                <div className="min-w-0 flex-1">
-                  <div className="admin-post__meta">
-                    <span>{post.date}</span>
-                    <span>•</span>
-                    <span>{post.views} views</span>
-                  </div>
-                  <h3 className="admin-post__title">{post.title}</h3>
-                  <p className="admin-post__excerpt">{post.excerpt}</p>
-                  <div className="admin-post__actions">
-                    <button
-                      onClick={() => startEdit(post)}
-                      className="btn-secondary"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => removePost(post.id)}
-                      className="btn-danger"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
+                <Icon size={15} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+          <button className="admin-sidebar__item" type="button" onClick={() => navigate("/")}>
+            <Monitor size={15} />
+            <span>View Website</span>
+          </button>
+          <button
+            className="admin-sidebar__item"
+            type="button"
+            onClick={() => {
+              onLogout();
+              navigate("/login");
+            }}
+          >
+            <LogOut size={15} />
+            <span>Logout</span>
+          </button>
+        </nav>
+
+        <div className="admin-sidebar__footer">INSTINCT BLOG V4.0</div>
+      </aside>
+
+      <section className="admin-main">
+        <header className="admin-topbar">
+          <div />
+          <button
+            className="admin-profile-chip"
+            type="button"
+            onClick={() => setActiveSection("profile")}
+          >
+            <img src={cryptodylLogoImage} alt="" />
+            <span>{currentUser?.displayName ?? "Dylan"}</span>
+            <ChevronDown size={14} />
+          </button>
+        </header>
+
+        <div className="admin-main__content">
+          <div className="admin-page-head">
+            <h1>
+              {activeSection === "dashboard"
+                ? "Dashboard"
+                : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+            </h1>
           </div>
-        </section>
-      </div>
+
+          {renderSection()}
+        </div>
+      </section>
     </motion.main>
   );
 }
@@ -1918,17 +2231,14 @@ export default function App() {
             path="/admin"
             element={
               isAdmin ? (
-                <>
-                  <AdminPanel
-                    posts={posts}
-                    setPosts={setPosts}
-                  />
-                  <AdminAccessPanel
-                    users={users}
-                    setUsers={setUsers}
-                    currentUserEmail={loggedUserEmail}
-                  />
-                </>
+                <AdminPanel
+                  posts={posts}
+                  setPosts={setPosts}
+                  users={users}
+                  setUsers={setUsers}
+                  currentUserEmail={loggedUserEmail}
+                  onLogout={handleLogout}
+                />
               ) : (
                 <LoginPage onLogin={handleLogin} />
               )
